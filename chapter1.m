@@ -1,6 +1,6 @@
 %% Load the recording, define the time between samples, and define a time vector.
 
-load('recording1.mat')
+load('recording1_good.mat')
 data = data';  % transpose for future convenience
 
 dt = 1 ./ samplingRate;  % dt is the time between samples
@@ -44,7 +44,7 @@ ylabel('# of occurrences');
 %% Measuring the peaks of the modes of the Up and Down states.
 % For reasonable data, the location of the peak of the left-hand mode will be roughly equivalent to the
 % resting membrane potential. Because the data spends more time in the Down state,
-% the peak of the left-hand mode is larger, and it can be well estimated by the mode.
+% the peak of the left-hand mode is larger, and it can be well estimated by the (overall) mode.
 % Note: this is identical to the x-value of the peak of the left-hand mode of the voltage distribution.
 
 vRestRaw = mode(data);
@@ -201,32 +201,41 @@ title('putative Down state durations');
 % Also, a handful are very short ( < 400 ms).
 
 %% Applying minimum upstate and downstate durations (i.e. filtering putative Up and Down states).
-% Often at this point in analysis, we filter the putative up and down states to achieve
-% a classification in which each category (i.e. Up states vs. events) contains a relatively homogenous
-% set of phenomena. Much of this is based on experience and intuition, but as our previous
-% visualization of the Up and Down durations showed, it can be empirically justified based on the data.
 
-% For example, we can apply a minimum downstate duration of 100 ms by taking any putative downstate
-% classification that is shorter than 100 ms and deleting that label.
-% Practically speaking, the result is that the preceding and following upstates will be combined.
-% This is often a correcting operation that rejects spurious putative Down states that
-% are actually short interruptions of a single Up state.
+%{
+Often at this point in analysis, we filter the putative up and down states to achieve
+a classification in which each category (i.e. Up states vs. events) contains a relatively homogenous
+set of phenomena. Much of this is based on experience and intuition, but as our previous
+visualization of the Up and Down durations showed, it can be empirically justified based on the data.
 
-% On the other hand, applying a minimum upstate duration should probably be considered
-% a purely semantic move. It simply labels putative Up states that are shorter than the minimum duration
-% as "events" rather than Up states... Thus, they are separated for all further analysis.
-% Each analysis should consider carefully whether these events should be considered to be
-% part of the Down state.
+For example, we can apply a minimum downstate duration of 100 ms by taking any putative downstate
+classification that is shorter than 100 ms and deleting that label.
+Practically speaking, the result is that the preceding and following upstates will be combined.
+This is often a correcting operation that rejects spurious putative Down states that
+are actually short interruptions of a single Up state.
 
-% In the current analysis, as in most, we will simply ignore events and focus on longer
-% putative Up states. We will use chosen values for the minimum "true" Up state duration
-% and minimum Down state duration. Finally, we will use the function 'find_upstates'
-% which is well-commented and shows one method of finding upstates
+On the other hand, applying a minimum upstate duration should probably be considered
+a purely semantic move. It simply labels putative Up states that are shorter than the minimum duration
+as "events" rather than Up states... Thus, they are separated for all further analysis.
+Each analysis should consider carefully whether these events should be considered to be
+part of the Down state.
+
+In the current analysis, as in most, we will simply ignore the shorter "events" and focus on longer
+putative Up states. We will use chosen values for the minimum "true" Up state duration
+and minimum Down state duration. To apply these parameters, we will use the function 'find_upstates'
+which you should read to see how it works.
+
+Note that deleting short putative Down states and rejecting short putative Up states
+performs a similar function to using a median filtered version of the data.
+Short excursions above and below threshold that caused by noise will not influence
+our chosen up and down states. Thus, it is not necessary to median filter the input
+to 'find_upstates.' However, it could help in some datasets.
+%}
 
 MIN_UP_DUR = 0.5;
 MIN_DOWN_DUR = 0.1;
 
-[u_ons, u_off] = find_upstates(dataMedf, dt, V_THRESH, MIN_UP_DUR, MIN_DOWN_DUR);
+[u_ons, u_off] = find_upstates(data, dt, V_THRESH, MIN_UP_DUR, MIN_DOWN_DUR);
 
 figure(5); clf;
 plot_upstates(time, data, u_ons, u_off);
@@ -235,8 +244,10 @@ plot_upstates(time, data, u_ons, u_off);
 % The world is your oyster. Here are some ideas for things you could do:
 %{
 1) Segment the upstates out of the raw recording.
-2) Plot them superimposed
-3) Calculate the correlation between each pair of upstates
-4) 
-
+2) Plot all upstates superimposed
+3) Calculate each upstate and downstate's duration
+4) Calculate the upstate frequency in the data
+5) Calculate the variance of the upstate vs. downstate
+6) Calculate the correlation between each pair of upstates
+7) Etc
 %}
