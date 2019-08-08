@@ -1,15 +1,6 @@
 %% Load the recording, define the time between samples, and define a time vector.
 
-% load('recording1_good.mat')
-% load('recording2_drift.mat')
 load('recording3_drift.mat')
-% load('recording4_drift.mat')
-% load('recording5_nonlinear_drift.mat')
-% load('recording6_nonlinear_drift.mat')
-% load('recording7_extremedrift.mat')
-% load('recording8_noisydrift.mat')
-% load('recording9_submerged.mat')
-% load('recordingA_driftsubmerged.mat')
 data = data';  % transpose for future convenience
 dt = 1 ./ samplingRate;  % dt is the time between samples
 time = dt:dt:dt*(length(data));  % this time vector will come in handy later!

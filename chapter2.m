@@ -160,6 +160,10 @@ title('Voltage thresh succeeds when applied to detrended signal');
 
 %% Attempting variance threshold-based upstate detection
 %{
+Volgushev, M., Chauvette, S., Mukovski, M. & Timofeev, I. J. Neurosci. (2006).
+Precise long-range synchronization of activity and silence in neocortical
+neurons during slow-wave oscillations
+
 Mann, E. O., Kohl, M. M. & Paulsen, O. J. Neurosci. (2009).
 Distinct Roles of GABA-A and GABA-B Receptors in Balancing and Terminating
 Persistent Cortical Activity.

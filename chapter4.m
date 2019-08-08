@@ -41,7 +41,6 @@ data = data';  % transpose for future convenience
 dt = 1 ./ samplingRate;  % dt is the time between samples
 time = dt:dt:dt*(length(data));  % this time vector will come in handy later!
 
-
 %% Ensure that previously defined techniques produce reasonable results
 
 MIN_UP_DUR = 0.5;
