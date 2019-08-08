@@ -1,3 +1,79 @@
+%%
+
+[u_ons_cema1, u_off_cema1] = find_upstates_ema_crossover5(data, dt, ...
+    EMA_WIDTH_SLOW, EMA_WIDTH_FAST, [], []);
+[u_ons_cema2, u_off_cema2] = find_upstates_ema_crossover5(data, dt, ...
+    EMA_WIDTH_SLOW, EMA_WIDTH_FAST, MIN_UP_DUR, MIN_DOWN_DUR);
+%{
+dw gets filtered in the following way:
+    1) 
+%}
+[data, dw, dd, hmfast, hmslow] = maudsStatesFestWindow(data, samplingRate, round(EMA_WIDTH_SLOW / dt), round(EMA_WIDTH_FAST / dt));
+u_ons_mauds1 = dw(1:end - 1, 2)';
+u_off_mauds1 = dw(2:end, 1)';
+[u_ons_mauds2, u_off_mauds2] = filter_upstates(u_ons_mauds1, u_off_mauds1, dt, MIN_DOWN_DUR, MIN_UP_DUR);
+% u_ons_mauds2 = dd(1:end - 1, 2)';
+% u_off_mauds2 = dd(2:end, 1)';
+% [u_ons_mauds2, u_off_mauds2] = filter_upstates(u_ons_mauds2, u_off_mauds2, dt, [], .04);
+
+% figure(2); clf;
+% plot_upstates(time, data, u_ons_cema, u_off_cema);
+
+figure(3); clf;
+u_ons_seq = {u_ons_cema1, u_ons_cema2, u_ons_mauds1, u_ons_mauds2};
+u_off_seq = {u_off_cema1, u_off_cema2, u_off_mauds1, u_off_mauds2};
+labels = {'CEMA-nofilt', 'CEMA-filt', 'MAUDS-d', 'MAUDS-d-filt'};
+plot_upstate_comparison(time, data, u_ons_seq, u_off_seq, labels);
+scrollplot_default;
+
+dataSlowEMA1 = movmean_exp(data, round(EMA_WIDTH_SLOW / dt));
+dataFastEMA1 = movmean_exp(data, round(EMA_WIDTH_FAST / dt));
+
+figure(3); clf;
+p = plot(time, data, 'k');
+p.Color(4) = 0.2;
+hold on;
+plot(time, dataSlowEMA1, 'g');
+plot(time, dataFastEMA1, 'r');
+scrollplot_default;
+
+%% backwards EMA?
+
+% EMA_SC_SLOW = 5e-6 * 4;  % 2-6
+% EMA_SC_FAST = 5e-4 * 4; % .025-.1
+
+dataSlowEMA1f = movmean_exp(data, round(EMA_WIDTH_SLOW / 2 / dt));
+dataSlowEMA1r = flipud(movmean_exp(flipud(data), round(EMA_WIDTH_SLOW / 2 / dt)));
+dataFastEMA1f = movmean_exp(data, round(EMA_WIDTH_FAST / 2 / dt));
+dataFastEMA1r = flipud(movmean_exp(flipud(data), round(EMA_WIDTH_FAST / 2 / dt)));
+
+dataSlowEMA1 = 0.5 * dataSlowEMA1f + 0.5 * dataSlowEMA1r;
+dataFastEMA1 = 0.5 * dataFastEMA1f + 0.5 * dataFastEMA1r;
+
+% dataSlowEMA2 = movmean_exp2(data, EMA_SC_SLOW);
+% dataFastEMA2 = movmean_exp2(data, EMA_SC_FAST);
+
+figure(3); clf;
+p = plot(time, data, 'k');
+p.Color(4) = 0.2;
+hold on;
+% plot(time, dataSlowEMA1f, 'g.');
+% plot(time, dataSlowEMA1r, 'g--');
+% plot(time, dataFastEMA1f, 'r.');
+% plot(time, dataFastEMA1r, 'r--');
+
+plot(time, dataSlowEMA1, 'g');
+plot(time, dataFastEMA1, 'r');
+
+scrollplot_default;
+
+% ARROWS_EVERY = 1;
+% timeDS = time(1:round(ARROWS_EVERY / dt):end);
+% dataDS = dataSlowEMA1(1:round(ARROWS_EVERY / dt):end);
+% u = pi ./ 2 * ones(size(dataDS));
+% v = 0 * ones(size(dataDS));
+% quiver(timeDS', dataDS, u, v, 0.01);
+
 %% Calculating moving standard deviation based on Mann et al. (2009)
 
 MEDIAN_FILTER_WIDTH = 0.02;
@@ -66,7 +142,7 @@ hold on;
 plot(time, dataDetrendedFastEMA, 'g');
 plot(time, dataDetrendedSlowEMA, 'r');
 
-[u_ons_cema, u_off_cema] = find_upstates_ema_crossover(data, dt, ...
+[u_ons_cema, u_off_cema] = find_upstates_ema_crossover1(data, dt, ...
     EMA_WIDTH_SLOW, EMA_WIDTH_FAST, .04, []);
 dw_cema = [1 u_off_cema; u_ons_cema length(data)]';
 dw_cema_filtered = filterShortStates(dw_cema, .04, samplingRate);
@@ -301,9 +377,9 @@ dataClippedFastEMA = movmean_exp(dataNoSpikes, round(EMA_WIDTH_FAST / dt));
 % plot(time, dataClippedSlowEMA, 'g');
 % plot(time, dataClippedFastEMA, 'r');
 
-% [u_ons_cema, u_off_cema] = find_upstates_ema_crossover(useDataLong, dt, ...
+% [u_ons_cema, u_off_cema] = find_upstates_ema_crossover1(useDataLong, dt, ...
 %     EMA_WIDTH_SLOW, EMA_WIDTH_FAST);
-[u_ons_cema, u_off_cema] = find_upstates_ema_crossover(dataNoSpikes, dt, ...
+[u_ons_cema, u_off_cema] = find_upstates_ema_crossover1(dataNoSpikes, dt, ...
     EMA_WIDTH_SLOW, EMA_WIDTH_FAST, DUR_THRESH, EXTENSION_THRESH);
 n_upstates_cema = length(u_ons_cema);
 
@@ -355,7 +431,7 @@ saveSTTCOff = zeros(length(searchFastWindow), length(searchSlowWindow));
 
 for fastInd = 1:length(searchFastWindow)
 for slowInd = 1:length(searchSlowWindow)
-    [u_ons_cema, u_off_cema] = find_upstates_ema_crossover(dataNoSpikes, dt, ...
+    [u_ons_cema, u_off_cema] = find_upstates_ema_crossover1(dataNoSpikes, dt, ...
         searchSlowWindow(slowInd), searchFastWindow(fastInd), DUR_THRESH, EXTENSION_THRESH);
 %     [u_ons_cema_sharp, u_off_cema_sharp] = sharpen_upstates_slope(dataNoSpikes, dt, ...
 %         u_ons_cema, u_off_cema, SLOPE_WIDTH, SLOPE_THRESH, BASELINE_DISTANCE);

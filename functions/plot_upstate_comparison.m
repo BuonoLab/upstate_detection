@@ -32,8 +32,10 @@ for seq_ind = 1:n_seqs
     for up_ind = 1:n_upstates
         x1 = t(u_ons(up_ind));
         x2 = t(u_off(up_ind));
-        y1 = ymin + (seq_ind - 1) / n_seqs * (ymax - ymin);
-        y2 = ymin + seq_ind / n_seqs * (ymax - ymin);
+%         y1 = ymin + (seq_ind - 1) / n_seqs * (ymax - ymin);
+%         y2 = ymin + seq_ind / n_seqs * (ymax - ymin);
+        y1 = ymax - seq_ind / n_seqs * (ymax - ymin);
+        y2 = ymax - (seq_ind - 1) / n_seqs * (ymax - ymin);
         patch('Vertices', [x1, y1; x2, y1; x2, y2; x1, y2], 'Faces', [1, 2, 3, 4], ...
             'FaceColor', colors(seq_ind, :), 'FaceAlpha', 0.2, 'EdgeAlpha', 0);
         l = line([x1 x2], [(ymin - seq_ind) (ymin - seq_ind)]);
