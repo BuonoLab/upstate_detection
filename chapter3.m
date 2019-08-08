@@ -3,12 +3,12 @@
 clear;
 % load('recording1_good.mat')
 % load('recording2_drift.mat')
-load('recording3_drift.mat')
+% load('recording3_drift.mat')
 % load('recording4_drift.mat')
 % load('recording5_nonlinear_drift.mat')
 % load('recording6_nonlinear_drift.mat')
 % load('recording7_extremedrift.mat')
-% load('recording8_noisydrift.mat')
+load('recording8_noisydrift.mat')
 % load('recording9_submerged.mat')
 % load('recordingA_driftsubmerged.mat')
 data = data';  % transpose for future convenience
@@ -35,6 +35,8 @@ they claim it will work well (e.g. drift). For example, see below:
 
 figure(1); clf;
 plotMaudsFromData(data, samplingRate);
+title('Out-of-the-box mauds4matlab solution from Seamari et al. 2007', ...
+    'FontSize', 18);
 
 %{
 Furthermore, while the method may seem to have very few chosen parameters,
@@ -78,18 +80,20 @@ crossings is heavily skewed toward small values; most of these EMA
 crossings are inconsequential and can be safely ignored. Here, I introduce
 two additional parameters to handle this problem. The two parameters describe
 how far the EMAs must be from each other in order for them to be considered
-consequential, i.e. to signify upstates and downstates.
+consequential, i.e. to signify upstates (first param) and downstates (second param).
 
-I then use the above two parameters to institue two rules for pruning
+3. I then use the above two parameters to institue two rules for pruning
 the initial set of putative states given by EMA crossover:
-1) Only putative upstates above the upstate EMA distance threshold are
-considered, all others are considered inconsequential and deleted.
-2) Sets of consecutively inconsequential down- and upstates that intervene
-between consequential upstates are deleted, effectively combining the
+Step 1: Only putative upstates above the upstate EMA distance threshold are
+considered, and all others are labeled sub-threshold and will be deleted.
+Step 2: Sets of consecutive sub-threshold down- and upstates that intervene
+between supra-threshold upstates are deleted, effectively combining the
 surrounding pair of consequential upstates.
 %}
 
-%% OK, so let's take a look at the EMA itself.
+%% OK, so let's take a look at the EMAs and their crossover regions.
+% Note: the below plot takes a long time depending on the length of the
+% trace, so I only plot a short 20 s segment.
 
 % Here I define the widths (in seconds) of the slow and fast EMAs
 % Seamari et al. use 6 s and 0.1 s
@@ -113,14 +117,32 @@ dataFastEMABackward = flipud(movmean_exp(flipud(data), round(EMA_WIDTH_FAST / 2 
 dataSlowEMA1 = 0.5 * dataSlowEMAForward + 0.5 * dataSlowEMABackward;
 dataFastEMA1 = 0.5 * dataFastEMAForward + 0.5 * dataFastEMABackward;
 
-figure(2); clf;
-p = plot(time, data, 'k');
-p.Color(4) = 0.2;
-hold on;
-plot(time, dataSlowEMA1, 'g');
-plot(time, dataFastEMA1, 'r');
+showTime = 20;
+showPts = round(showTime / dt);
 
-%% How far apart are the two EMAs during the interval between a crossing?
+figure(2); clf;
+p = plot(time(1:showPts), data(1:showPts), 'k');
+p.Color(4) = 0.1;
+hold on;
+plot(time(1:showPts), dataSlowEMA1(1:showPts), 'g');
+plot(time(1:showPts), dataFastEMA1(1:showPts), 'r');
+fill_between(time(1:showPts), dataSlowEMA1(1:showPts), dataFastEMA1(1:showPts));
+fill_between(time(1:showPts), dataFastEMA1(1:showPts), dataSlowEMA1(1:showPts));
+xlabel('Time (s)');
+ylabel('Potential (mv)');
+
+%{
+The red trace is the fast EMA, and the green trace is the slow EMA.
+The yellow shaded region shows the area between them.
+The "positive" regions where the fast EMA (red) exceeds the slow EMA (green)
+represent putative upstates.
+The "negative" regions where the fast EMA (red) falls below the slow EMA (green)
+represent putative downstates.
+Notice that most yellow regions are small.
+We argue they should be ignored below a certain threshold of smallness.
+%}
+
+%% How far apart are the two EMAs between crossings?
 % Let's plot the distribution of average inter-EMA distances.
 
 [up_dists, down_dists] = investigate_states_ema_crossover(data, dt, ...
