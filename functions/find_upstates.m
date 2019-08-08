@@ -1,4 +1,4 @@
-function [u_ons, u_off] = find_upstates(v, dt, v_thresh, dur_thresh, extension_thresh)
+function [ups, downs] = find_upstates(v, dt, v_thresh, dur_thresh, extension_thresh)
 % given 1d signal, returns indices of on-sets and off-sets of "upstates"
 
 % input arguments:
@@ -29,6 +29,13 @@ downward_crossings = [false above_bool(1:end - 1) & below_bool(2:end)];
 ups = find(upward_crossings);
 downs = find(downward_crossings);
 
+% no upstates? return empty vectors
+if isempty(ups)
+    ups = [];
+    downs = [];
+    return
+end
+
 % recording could have started and ended during different states
 % (e.g. start during upstate & end during downstate or vice versa)
 % in which case one putative up or down transition will not be paired with its buddy
@@ -44,30 +51,25 @@ end
 % ensure the above worked and we have equal numbers of putative up and down transitions
 assert(length(ups)==length(downs));
 
-% no upstates? return empty vectors
-if isempty(ups)
-    u_ons = [];
-    u_off = [];
-    return
+if ~isempty(extension_thresh)
+    % calculate downstate durations (in points)
+    down_durs = ups(2:end) - downs(1:end - 1);
+
+    % delete short downstates
+    % (this effectively combines upstates that are separated by short downstates)
+    keep_downs = down_durs > extension_thresh / dt;
+    ups = ups([true keep_downs]);
+    downs = downs([keep_downs true]);
 end
 
-% calculate downstate durations (in points)
-down_durs = ups(2:end) - downs(1:end - 1);
+if ~isempty(dur_thresh)
+    % delete short upstates
+    up_durs = downs - ups;
+    long_durs = up_durs > dur_thresh / dt;
+    ups = ups(long_durs);
+    downs = downs(long_durs);
+end
 
-% delete short downstates
-% (this effectively combines upstates that are separated by short downstates)
-keep_downs = down_durs > extension_thresh / dt;
-ups = ups([true keep_downs]);
-downs = downs([keep_downs true]);
-
-assert(length(ups)== length(downs));
-
-% delete short upstates
-up_durs = downs - ups;
-long_durs = up_durs > dur_thresh / dt;
-u_ons = ups(long_durs);
-u_off = downs(long_durs);
-
-assert(length(u_ons) == length(u_off), 'Number of detected onsets and offsets are different.')
+assert(length(ups) == length(downs), 'Number of detected onsets and offsets are different.')
 
 end

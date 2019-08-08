@@ -27,10 +27,9 @@ The resting membrane potential drifts upward slowly throughout the recording.
 As a result, the voltage histogram does not have a typical shape. The resting membrane potential
 (i.e. the left-hand peak) is not as well-defined, and the distribution is not clearly bimodal.
 
-Ideally, recording conditions will be such that this does not happen. Nevertheless, drift
-appears in otherwise good data somewhat frequently, so we should be prepared to deal with it.
-This also will allow us to demonstrate how some upstate detection methods are impervious
-to drift.
+Ideally, recording conditions will be such that this does not happen.
+Nevertheless, we should be prepared to deal with it. This also will allow us
+to demonstrate that some upstate detection methods are impervious to drift.
 %}
 
 %% Let's try performing a voltage threshold-based upstate detection on the raw data.
@@ -45,6 +44,7 @@ MIN_DOWN_DUR = 0.1;  % minimum down state duration
 
 figure(3); clf;
 plot_upstates(time, data, u_ons, u_off);
+title('Voltage threshold fails in the presence of drift (without detrending)');
 
 % While this approach works decently well in the first part of the recording,
 % it begins to completely break down as the resting membrane potential drifts above the threshold.
@@ -97,15 +97,16 @@ legend('Raw', 'Detrended');
 % I wrote a function that does this, based on the concept that the voltage distribution
 % will be bimodal and the two peaks will be separated by a certain amount.
 % More specifically, to use the function, we need to define two parameters:
-% 1) The bin size for the histogram
-% 2) About how separated the two mode peaks should be in mV.
-BINSIZE_V = .1;
-SEPARATION_V = 7;
+% 1) The bin size for the histogram, in mV.
+% 2) About how separated the two mode peaks should be, in mV.
+BINSIZE_V = .1;  % mV
+SEPARATION_V = 7;  % mV
 
 figure(4); clf;
 V_THRESH = estimate_threshold(dataDetrended, BINSIZE_V, SEPARATION_V, true);
 xlabel('Potential (mV)');
 ylabel('# of occurences');
+title('Optimizing choice of voltage threshold');
 
 %% Visualizing supra- and sub-threshold durations
 % As in the previous chapter, let's visualize the distribution of supra- and sub-threshold
@@ -120,7 +121,7 @@ dataMedf = medfilt1(dataDetrended, round(MEDIAN_FILTER_WIDTH / dt) + 1, 'truncat
 
 [upCrossings, downCrossings, downDurs, upDurs] = investigate_crossings(dataMedf, dt, V_THRESH);
 
-figure(4); clf;
+figure(5); clf;
 
 subplot(211);
 histogram(upDurs, 0:.04:2);  % bin edges are chosen carefully
@@ -146,16 +147,28 @@ MIN_UP_DUR = 0.5;
 MIN_DOWN_DUR = 0.1;
 
 % *** NOTE: I use dataDetrended rather than data ! ***
-% [u_ons, u_off] = find_upstates(dataDetrended, dt, V_THRESH, MIN_UP_DUR, MIN_DOWN_DUR);
-[u_ons, u_off] = find_upstates(dataDetrended, dt, vRestDetrended + 7, MIN_UP_DUR, MIN_DOWN_DUR);
+[u_ons, u_off] = find_upstates(dataDetrended, dt, V_THRESH, MIN_UP_DUR, MIN_DOWN_DUR);
+% [u_ons, u_off] = find_upstates(dataDetrended, dt, vRestDetrended + 7, MIN_UP_DUR, MIN_DOWN_DUR);
 
-figure(5); clf;
+figure(6); clf;
 plot_upstates(time, data, u_ons, u_off);
+title('Voltage thresh succeeds when applied to detrended signal');
 
-% After detrending and choosing
+% After detrending and choosing a more optimal voltage threshold,
+% our voltage threshold-based upstate detection looks pretty good!
+% But is there a way we can achieve a similar result without detrending?
 
 %% Attempting variance threshold-based upstate detection
 %{
+Mann, E. O., Kohl, M. M. & Paulsen, O. J. Neurosci. (2009).
+Distinct Roles of GABA-A and GABA-B Receptors in Balancing and Terminating
+Persistent Cortical Activity.
+
+Concept also used as a "backup" method in:
+Neske, G. T., Patrick, S. L. & Connors, B. W. J. Neurosci. (2015).
+Contributions of Diverse Excitatory and Inhibitory Neurons to Recurrent
+Network Activity in Cerebral Cortex.
+
 Typically upstates are associated not only with an increase in voltage, but also an increase
 in variability of voltage over time. In other words, the voltage trace not only goes up,
 but it becomes more wiggly and noisy. This fact has led several researchers to use the moving
@@ -175,25 +188,33 @@ dataMSTD = movstd(data, (STD_WIDTH / dt) + 1);
 figure(6); clf;
 subplot(211);
 plot(time, data);
+title('Original data');
 subplot(212);
 plot(time, dataMSTD);
+title('Moving standard deviation');
 
 figure(7); clf;
 histogram(dataMSTD);
+title('Most values in the moving STD trace are small');
 
 % Right away we see a few things:
 % First, the moving STD is bounded at 0.
 % Second, during upstates, the moving standard deviation also tends to increase.
+% Third, the distribution of moving STD values is heavily skewed toward 0,
+% and the mode of this distribution represents the baseline or "resting"
+% value of the moving STD.
 
 %% Use the moving standard deviation to detect upstates.
-% This will function nearly identically to the voltage threshold-based approaches,
-% but instead of using the data trace, we will use the moving standard deviation.
-% This also means that we will have to choose a threshold, in units of standard deviation.
-% Here, I choose 5 times the "baseline" moving standard deviation value, which I 
-% estimate using the mode. After detecting upstates in this way,
-% we will plot a comparison of the upstates chosen by the two methods to each other.
-% I will also add a scroll bar to the plot so that the upstates can be compared
-% more closely.
+%{
+This will function nearly identically to the voltage threshold-based approaches,
+but instead of using the data trace, we will use the moving standard deviation.
+This also means that we will have to choose a threshold, in units of standard deviation.
+Here, I choose 5 times the "baseline" moving standard deviation value, which I 
+estimate using the mode. After detecting upstates in this way,
+we will plot a comparison of the upstates chosen by the two methods to each other.
+I will also add a scroll bar to the plot so that the upstates can be compared
+more closely.
+%}
 
 STD_THRESH = 5 * mode(dataMSTD);
 
@@ -204,17 +225,18 @@ u_ons_seq = {u_ons, u_ons_std};
 u_off_seq = {u_off, u_off_std};
 labels = {'voltage-based', 'STD-based'};
 plot_upstate_comparison(time, data, u_ons_seq, u_off_seq, labels);
-scrollplot_default;
+scrollplot_default(time, 20);
 
 %{
 *** For this particular dataset and with the currently chosen paramters ***
 performing upstate detection using the moving standard deviation had a few advantages:
 1) The data did not have to be detrended.
 2) The threshold did not have to be chosen carefully.
-3) According to most observers' standard, upstate detection performed slightly better because
-it detected one upstate not detected by the voltage-based and correctly detected a single upstate
+3) According to most observers' standards, STD-based upstate detection performed slightly better.
+It detected one upstate not detected by the voltage-based approach and correctly detected an upstate
 that the voltage-based broke into two upstates.
 
-HOWEVER, these problems could have potentially been fixed by altering some of the parameters
-in the voltage-based approach.
+These problems could have potentially been fixed by altering some of the parameters
+in the voltage-based approach. However, the parameter-light approach provided by
+the moving STD is arguably superior.
 %}

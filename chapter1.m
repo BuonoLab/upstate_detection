@@ -45,7 +45,7 @@ ylabel('# of occurrences');
 % For reasonable data, the location of the peak of the left-hand mode will be roughly equivalent to the
 % resting membrane potential. Because the data spends more time in the Down state,
 % the peak of the left-hand mode is larger, and it can be well estimated by the (overall) mode.
-% Note: this is identical to the x-value of the peak of the left-hand mode of the voltage distribution.
+% Note: this is typically identical to the x-value of the peak of the left-hand mode of the voltage distribution.
 
 vRestRaw = mode(data);
 
@@ -61,14 +61,11 @@ dataAboveDownState = data(data > vRestRaw + 7);
 upMode = mode(dataAboveDownState);
 
 % What should we do if we want to identify which periods of time are Down and Up states?
-% There are two main approaches:
-    % 1) Threshold-based.
-    % 2) Crossover of moving averages.
     
 %% Approach 1: Define states above and below a voltage threshold to be "Up" and "Down," respectively.
 % To best distinguish the two states using a threshold, the first step is to choose a threshold.
 % In the previous section we estimated the mode of the Up states by separating data more than
-% 5 mV above the Down mode. So in a sense, we already used a threshold.
+% 7 mV above the Down mode. So in a sense, we already used a threshold.
 % Let's define that formally and plot it on the time series.
 
 V_THRESH = vRestRaw + 7;
@@ -113,10 +110,10 @@ legend('putative Up states', 'putative Down states');
 % In this case, the operation is the median function.
 % The time window we will use is 100 ms.
 
-MEDIAN_FILTER_WIDTH = 0.1;  % 100 ms
+MEDIAN_FILTER_WIDTH = 0.1;  % seconds, i.e. 100 ms
 
 % The second argument is the number of *points* to perform the median across,
-% so I have to convert time to points by dividing by dt. I add 1 because the median
+% so I have to convert time to points by dividing by dt. I add 1 because the moving median
 % works best when given an odd number of points.
 % The third argument specifies that at the edges, the sliding window should be
 % truncated (the default behavior is to assume 0s, which would be incorrect for this data).
@@ -135,8 +132,9 @@ xlabel('Time (s)');
 ylabel('Potential (mv)');
 legend('raw data', 'threshold', 'median filtered data');
 
-% Let's also re-do our threshold-based classification using the median-filtered data.
+%% Let's re-do our threshold-based classification using the median-filtered data.
 
+% Note: dataMedf, rather than data
 aboveThresh = dataMedf >= V_THRESH;
 
 dataAboveThresh = data;
@@ -221,7 +219,7 @@ Each analysis should consider carefully whether these events should be considere
 part of the Down state.
 
 In the current analysis, as in most, we will simply ignore the shorter "events" and focus on longer
-putative Up states. We will use chosen values for the minimum "true" Up state duration
+Up states. We will use chosen values for the minimum "true" Up state duration
 and minimum Down state duration. To apply these parameters, we will use the function 'find_upstates'
 which you should read to see how it works.
 
@@ -239,6 +237,7 @@ MIN_DOWN_DUR = 0.1;
 
 figure(5); clf;
 plot_upstates(time, data, u_ons, u_off);
+scrollplot_default(time, 20);
 
 %% What now?
 % The world is your oyster. Here are some ideas for things you could do:

@@ -1,14 +1,13 @@
 %% Load the recording, define the time between samples, and define a time vector.
 
-clear;
 % load('recording1_good.mat')
 % load('recording2_drift.mat')
-% load('recording3_drift.mat')
+load('recording3_drift.mat')
 % load('recording4_drift.mat')
 % load('recording5_nonlinear_drift.mat')
 % load('recording6_nonlinear_drift.mat')
 % load('recording7_extremedrift.mat')
-load('recording8_noisydrift.mat')
+% load('recording8_noisydrift.mat')
 % load('recording9_submerged.mat')
 % load('recordingA_driftsubmerged.mat')
 data = data';  % transpose for future convenience
@@ -18,14 +17,14 @@ time = dt:dt:dt*(length(data));  % this time vector will come in handy later!
 %% Upstate detection through crossover of exponential moving averages
 
 %{
-Seamari, Y., Narváez, J. A., Vico, F. J., Lobo, D. & Sanchez-Vives, M. V.
-PLoS One (2007). Robust Off- and Online Separation of Intracellularly
-Recorded Up and Down Cortical States. Original code available at
-http://www.geb.uma.es/mauds
+Seamari, Y., Narváez, J. A., Vico, F. J., Lobo, D. & Sanchez-Vives, M. V. PLoS One (2007).
+Robust Off- and Online Separation of Intracellularly Recorded Up and Down Cortical States.
+Original code available at http://www.geb.uma.es/mauds
 
-Concept also used by: Neske, G. T., Patrick, S. L. & Connors, B. W.
-J. Neurosci. (2015). Contributions of Diverse Excitatory and Inhibitory
-Neurons to Recurrent Network Activity in Cerebral Cortex
+Concept also used by:
+Neske, G. T., Patrick, S. L. & Connors, B. W. J. Neurosci. (2015).
+Contributions of Diverse Excitatory and Inhibitory Neurons to Recurrent
+Network Activity in Cerebral Cortex
 
 For more information on how this method works, please read the original
 publication. Long story short, although the method seems like it's great,
@@ -91,7 +90,7 @@ between supra-threshold upstates are deleted, effectively combining the
 surrounding pair of consequential upstates.
 %}
 
-%% OK, so let's take a look at the EMAs and their crossover regions.
+%% Let's take a look at the EMAs and their crossover regions.
 % Note: the below plot takes a long time depending on the length of the
 % trace, so I only plot a short 20 s segment.
 
@@ -101,12 +100,11 @@ surrounding pair of consequential upstates.
 EMA_WIDTH_SLOW = 10;  % 2 - 10 s
 EMA_WIDTH_FAST = 0.1; % .025 - .1 s
 
-% If you're interested in how the EMA is calculated, inspect the function below.
+% If you're interested in how the EMA is calculated, inspect the movmean_exp function.
 dataSlowEMAForward = movmean_exp(data, round(EMA_WIDTH_SLOW / 2 / dt));
 
 % Here, I flip the input so that the EMA is computed moving backwards in
-% time, then I flip the output to orient it correctly with respect to the
-% data.
+% time, then I flip the output to orient it correctly with respect to the data.
 dataSlowEMABackward = flipud(movmean_exp(flipud(data), round(EMA_WIDTH_SLOW / 2 / dt)));
 
 % Do the same for the fast EMA.
@@ -173,4 +171,45 @@ MIN_DOWN_DIST = 0.15;
 
 figure(4); clf;
 plot_upstates(time, data, u_ons_cema, u_off_cema);
-scrollplot_default;
+scrollplot_default(time, 20);
+
+% Note that I haven't filtered out short events. This is to emphasize that using
+% filters based on putative state duration to get good detection results is
+% unnecessary using crossover of EMAs. Instead, here we focused on the
+% amplitude of crossover to filter out noise-driven state estimates.
+
+%% Let's compare all three techniques thus far.
+% To make the comparison fair, I'll try to filter out short states from the
+% crossover of moving averages (otherwise it will look like the other
+% didn't detect these short states when in truth, they did to some extent.)
+% However, since the EMA technique tends to estimate upstate onsets to be
+% earlier and offsets to be later, many of the shorter upstates will get
+% through the filter.
+
+MIN_UP_DUR = 0.5;
+MIN_DOWN_DUR = 0.1;
+
+vRestRaw = mode(data);
+dataDetrended = detrend(data) + vRestRaw;
+vRestDetrended = mode(dataDetrended);
+[u_ons, u_off] = find_upstates(dataDetrended, dt, vRestDetrended + 5, MIN_UP_DUR, MIN_DOWN_DUR);
+
+STD_WIDTH = 0.05;
+
+dataMSTD = movstd(data, (STD_WIDTH / dt) + 1);
+
+STD_THRESH = 5 * approximate_mode(dataMSTD);
+
+[u_ons_std, u_off_std] = find_upstates(dataMSTD, dt, STD_THRESH, MIN_UP_DUR, MIN_DOWN_DUR);
+
+[u_ons_cema, u_off_cema] = find_upstates_ema_crossover(data, dt, ...
+    EMA_WIDTH_SLOW, EMA_WIDTH_FAST, MIN_UP_DIST, MIN_DOWN_DIST);
+[u_ons_cema, u_off_cema] = filter_upstates(u_ons_cema, u_off_cema, dt, ...
+    MIN_UP_DUR, MIN_DOWN_DUR);
+
+figure(5); clf;
+u_ons_seq = {u_ons, u_ons_std, u_ons_cema};
+u_off_seq = {u_off, u_off_std, u_off_cema};
+labels = {'voltage thresh', 'STD thresh', 'EMA crossover'};
+plot_upstate_comparison(time, data, u_ons_seq, u_off_seq, labels);
+scrollplot_default(time, 20);
