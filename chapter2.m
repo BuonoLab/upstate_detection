@@ -147,12 +147,14 @@ MIN_UP_DUR = 0.5;
 MIN_DOWN_DUR = 0.1;
 
 % *** NOTE: I use dataDetrended rather than data ! ***
+% V_THRESH = mode(dataDetrended) + 5;
 [u_ons, u_off] = find_upstates(dataDetrended, dt, V_THRESH, MIN_UP_DUR, MIN_DOWN_DUR);
 % [u_ons, u_off] = find_upstates(dataDetrended, dt, vRestDetrended + 7, MIN_UP_DUR, MIN_DOWN_DUR);
 
 figure(6); clf;
 plot_upstates(time, data, u_ons, u_off);
 title('Voltage thresh succeeds when applied to detrended signal');
+scrollplot_default(time, 20);
 
 % After detrending and choosing a more optimal voltage threshold,
 % our voltage threshold-based upstate detection looks pretty good!
@@ -189,7 +191,7 @@ STD_WIDTH = 0.05;
 
 % Notice that we apply movstd to the raw trace, rather than the detrended trace.
 dataMSTD = movstd(data, (STD_WIDTH / dt) + 1);
-figure(6); clf;
+figure(7); clf;
 subplot(211);
 plot(time, data);
 title('Original data');
@@ -197,7 +199,7 @@ subplot(212);
 plot(time, dataMSTD);
 title('Moving standard deviation');
 
-figure(7); clf;
+figure(8); clf;
 histogram(dataMSTD);
 title('Most values in the moving STD trace are small');
 
@@ -224,7 +226,7 @@ STD_THRESH = 5 * mode(dataMSTD);
 
 [u_ons_std, u_off_std] = find_upstates(dataMSTD, dt, STD_THRESH, MIN_UP_DUR, MIN_DOWN_DUR);
 
-figure(8); clf;
+figure(9); clf;
 u_ons_seq = {u_ons, u_ons_std};
 u_off_seq = {u_off, u_off_std};
 labels = {'voltage-based', 'STD-based'};

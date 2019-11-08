@@ -106,17 +106,18 @@ dataFastEMABackward = flipud(movmean_exp(flipud(data), round(EMA_WIDTH_FAST / 2 
 dataSlowEMA1 = 0.5 * dataSlowEMAForward + 0.5 * dataSlowEMABackward;
 dataFastEMA1 = 0.5 * dataFastEMAForward + 0.5 * dataFastEMABackward;
 
-showTime = 20;
-showPts = round(showTime / dt);
+showTime = [dt 40];
+showStart = round(showTime(1) / dt);
+showEnd = round(showTime(2) / dt);
 
 figure(2); clf;
-p = plot(time(1:showPts), data(1:showPts), 'k');
+p = plot(time(showStart:showEnd), data(showStart:showEnd), 'k');
 p.Color(4) = 0.1;
 hold on;
-plot(time(1:showPts), dataSlowEMA1(1:showPts), 'g');
-plot(time(1:showPts), dataFastEMA1(1:showPts), 'r');
-fill_between(time(1:showPts), dataSlowEMA1(1:showPts), dataFastEMA1(1:showPts));
-fill_between(time(1:showPts), dataFastEMA1(1:showPts), dataSlowEMA1(1:showPts));
+plot(time(showStart:showEnd), dataSlowEMA1(showStart:showEnd), 'g');
+plot(time(showStart:showEnd), dataFastEMA1(showStart:showEnd), 'r');
+fill_between(time(showStart:showEnd), dataSlowEMA1(showStart:showEnd), dataFastEMA1(showStart:showEnd));
+fill_between(time(showStart:showEnd), dataFastEMA1(showStart:showEnd), dataSlowEMA1(showStart:showEnd));
 xlabel('Time (s)');
 ylabel('Potential (mv)');
 

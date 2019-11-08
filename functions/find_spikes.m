@@ -1,4 +1,4 @@
-function spike_inds = find_spikes2(v, thresh)
+function spike_inds = find_spikes(v, thresh)
 % given a 1d array v, return indices of local maxima within segments of v that exceed thresh
 % mike seay, buonomano lab, may 2019
 

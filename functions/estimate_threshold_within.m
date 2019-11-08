@@ -1,10 +1,10 @@
-function [thresh, edges] = estimate_threshold(v, bin_width, separation, do_plot)
+function [thresh, edges] = estimate_threshold_within(v, bin_width, separation, v_rest, do_plot)
 
 if nargin < 4
     do_plot = false;
 end
 
-[N, edges] = histcounts(v, min(v):bin_width:max(v));
+[N, edges] = histcounts(v, (v_rest - separation):bin_width:max(v));
 % [N, edges] = histcounts(v);
 bin_centers_all = (edges(1:end - 1) + edges(2:end)) / 2;
 [~, locs] = findpeaks(N, 'NPeaks', 2, 'SortStr', 'descend', ...

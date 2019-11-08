@@ -5,7 +5,7 @@ if size(v_in, 1) ~= 1
     v_in = v_in';
 end
 
-spike_times = find_spikes2(v_in, SPIKE_THRESH);
+spike_times = find_spikes(v_in, SPIKE_THRESH);
 n_spikes = length(spike_times);
 
 ind_minus = ceil(SPIKETHRESH_BACKSET/dt);

@@ -1,4 +1,4 @@
-function [ups, downs] = filter_upstates(ups, downs, dt, extension_thresh, dur_thresh)
+function [ups, downs, e_ups, e_downs] = filter_upstates(ups, downs, dt, extension_thresh, dur_thresh)
 
 % attempt to lengthen edges forward and backward
 % i.e. for lengthening a long upstate's onset to a prior short upstate's offset
@@ -17,6 +17,8 @@ if ~isempty(dur_thresh)
     long_durs = durs > dur_thresh / dt;
     ups = ups(long_durs);
     downs = downs(long_durs);
+    e_ups= ups(~long_durs);
+    e_downs = downs(~long_durs);
 end
 
 assert(length(ups) == length(downs), 'Number of detected onsets and offsets are different.')

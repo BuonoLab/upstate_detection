@@ -30,7 +30,7 @@ ups = find(upward_crossings);
 downs = find(downward_crossings);
 
 % no upstates? return empty vectors
-if isempty(ups)
+if isempty(ups) || isempty(downs)
     ups = [];
     downs = [];
     return
@@ -44,8 +44,23 @@ end
 if downs(1) < ups(1)
     downs(1) = [];
 end
+
+% check once more if we have no true upstates
+if isempty(ups) || isempty(downs)
+    ups = [];
+    downs = [];
+    return
+end
+
 if ups(end) > downs(end)
     ups(end) = [];
+end
+
+% check once more if we have no true upstates
+if isempty(ups) || isempty(downs)
+    ups = [];
+    downs = [];
+    return
 end
 
 % ensure the above worked and we have equal numbers of putative up and down transitions
