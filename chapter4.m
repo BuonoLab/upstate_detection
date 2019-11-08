@@ -113,8 +113,8 @@ scrollplot_default(time, 5);
 % overshadows the moving slope everywheere else.
 
 SPIKE_THRESH = -20;
-SPIKETHRESH_BACKSET = 0.0015; % 1.2
-SPIKETHRESH_FORSET = 0.0055; % 2.2
+SPIKETHRESH_BACKSET = 0.0015;
+SPIKETHRESH_FORSET = 0.0055;
 
 dataNoSpikes = remove_spikes(data, dt, SPIKE_THRESH, SPIKETHRESH_BACKSET, SPIKETHRESH_FORSET);
 
@@ -144,7 +144,7 @@ scrollplot_default(time, 5);
 % shrank previous up and down state durations, but also to improve the
 % fairness of comparison between the three techniques.
 
-BASELINE_DISTANCE = 0.1;  % time period surrounding current onset to check slope values
+BASELINE_DISTANCE = 0.1;  % time period before onset to check slope values
 
 [u_ons_sharp_slope, u_off_sharp_slope] = sharpen_upstates_slope(data, dt, ...
     u_ons, u_off, SLOPE_WIDTH, SLOPE_THRESH, BASELINE_DISTANCE);

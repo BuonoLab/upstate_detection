@@ -1,6 +1,10 @@
 function [ups, downs] = sharpen_upstates_slope(v, dt, ups, downs, ...
     slope_width, slope_thresh, before_distance, after_distance)
 
+if nargin < 8
+    after_distance = before_distance;
+end
+
 if isempty(ups)
     return
 end
