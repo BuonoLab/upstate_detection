@@ -4,9 +4,12 @@ if nargin < 4
     do_plot = false;
 end
 
+% get histogram counts
 [N, edges] = histcounts(v, min(v):bin_width:max(v));
 % [N, edges] = histcounts(v);
 bin_centers_all = (edges(1:end - 1) + edges(2:end)) / 2;
+
+% find the two biggest peaks that are separated by at least
 [~, locs] = findpeaks(N, 'NPeaks', 2, 'SortStr', 'descend', ...
     'MinPeakDistance', round(separation / bin_width));
 
@@ -21,9 +24,13 @@ thresh = bin_centers_all(min(locs) + min_inter_peak_ind - 1);
 if do_plot
     plot(bin_centers_all, N);
     hold on;
-    scatter(lower_edge, N(min(locs)), 'r');
-    scatter(upper_edge, N(max(locs)), 'r');
+    scatter([lower_edge upper_edge], [N(min(locs)) N(max(locs))], 'r');
     scatter(thresh, min_count, 'g');
+    xlim([-80 -35]);
+%     strip_axes;
+    ylabel('# of points at voltage');
+    xlabel('mV');
+    legend('voltage histogram', 'modes', 'chosen threshold');
 end
 
 end

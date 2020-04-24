@@ -15,8 +15,8 @@ assert(length(ups)== length(downs));
 if ~isempty(dur_thresh)
     durs = downs - ups;
     long_durs = durs > dur_thresh / dt;
-    e_ups= ups(~long_durs);
-    e_downs = downs(~long_durs);
+    e_ups= ups(~long_durs); % events
+    e_downs = downs(~long_durs); % events
     ups = ups(long_durs);
     downs = downs(long_durs);
 end
