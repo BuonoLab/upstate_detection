@@ -65,6 +65,11 @@ ylabel('STDs from baseline mean');
 
 STD_THRESHOLD = 5;
 
+% here we use "find" on the logical array which is true when the deviation
+% is above threshold. the second argument (1) specifies we just want to find the
+% index of the first appearance of a true (i.e. the first time we exceed
+% threshold).
+
 onsetTimeIndex = find(dataSegmentDeviation > STD_THRESHOLD, 1);
 onsetTime = timeSegment(onsetTimeIndex);
 
