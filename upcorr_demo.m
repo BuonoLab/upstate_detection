@@ -84,7 +84,7 @@ rhoShorterDur = corr(vOnlyUpstate', 'rows', 'pairwise');
 % cannot figure that out by itself.
 upstateCombos = nchoosek(1:n_upstates, 2);
 
-rhoLongerDur = nan(n_upstates, n_upstates);
+rhoLongerDur = zeros(n_upstates, n_upstates);
 for upstatePair = upstateCombos'
     firstUpstateInd = upstatePair(1);
     secondUpstateInd = upstatePair(2);
@@ -98,10 +98,10 @@ for upstatePair = upstateCombos'
 end
 
 % By definition the diagonal 1. This is meaningless as each upstate is
-% perfectly correlated with itself. We will change these to NaNs for
+% perfectly correlated with itself. We will change these to 0s for
 % visualization.
-rhoShorterDur(rhoShorterDur == 1) = NaN;
-rhoLongerDur(rhoLongerDur == 1) = NaN;
+rhoShorterDur(logical(eye(n_upstates))) = 0;
+rhoLongerDur(logical(eye(n_upstates))) = 0;
 
 %% plot the correlation matrices
 
@@ -127,6 +127,7 @@ ylabel('Pearson Correlation based on longer duration');
 %% Plot the most correlated pair of Up states
 % Based on the shorter duration
 
+useRho = rhoShorterDur;
 rhoShorterDurTril = rhoShorterDur;
 rhoShorterDurTril(rhoShorterDurTril == triu(rhoShorterDurTril, 1)) = NaN;
 
